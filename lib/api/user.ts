@@ -3,11 +3,11 @@ import { remark } from 'remark';
 import remarkMdx from 'remark-mdx';
 import { serialize } from 'next-mdx-remote/serialize';
 import type { MDXRemoteSerializeResult } from 'next-mdx-remote';
+import { toPublicUser } from '@/lib/public-user.mjs';
 
 export interface UserProps {
   name: string;
   username: string;
-  email: string;
   image: string;
   bio: string;
   bioMdx: MDXRemoteSerializeResult<Record<string, unknown>>;
@@ -46,12 +46,13 @@ export async function getUser(username: string): Promise<UserProps | null> {
   const collection = client.db('test').collection('users');
   const results = await collection.findOne(
     { username },
-    { projection: { _id: 0, emailVerified: 0 } }
+    { projection: { _id: 0, email: 0, emailVerified: 0 } }
   );
   if (results) {
+    const publicUser = toPublicUser(results);
     return {
-      ...results,
-      bioMdx: await getMdxSource(results.bio || placeholderBio)
+      ...publicUser,
+      bioMdx: await getMdxSource(publicUser.bio || placeholderBio)
     };
   } else {
     return null;
@@ -64,12 +65,14 @@ export async function getFirstUser(): Promise<UserProps | null> {
   const results = await collection.findOne(
     {},
     {
-      projection: { _id: 0, emailVerified: 0 }
+      projection: { _id: 0, email: 0, emailVerified: 0 }
     }
   );
+  if (!results) return null;
+  const publicUser = toPublicUser(results);
   return {
-    ...results,
-    bioMdx: await getMdxSource(results.bio || placeholderBio)
+    ...publicUser,
+    bioMdx: await getMdxSource(publicUser.bio || placeholderBio)
   };
 }
 
@@ -96,7 +99,6 @@ export async function getAllUsers(): Promise<ResultProps[]> {
             $push: {
               name: '$name',
               username: '$username',
-              email: '$email',
               image: '$image',
               followers: '$followers',
               verified: '$verified'
@@ -184,6 +186,7 @@ export async function searchUser(query: string): Promise<UserProps[]> {
       {
         $project: {
           _id: 0,
+          email: 0,
           emailVerified: 0,
           score: {
             $meta: 'searchScore'
