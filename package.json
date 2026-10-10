@@ -2,11 +2,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "yarn setup && next build",
+    "build": "npm run setup && next build",
     "start": "next start",
     "lint": "next lint",
     "setup": "NODE_OPTIONS='--experimental-json-modules' node ./scripts/setup.mjs",
-    "test:regression": "node --test tests/*.test.mjs"
+    "test:regression": "node --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@headlessui/react": "^1.6.4",
