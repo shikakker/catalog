@@ -1,25 +1,22 @@
 name: Product Completion Verification
-
 on:
   pull_request:
   push:
-    branches:
-      - "ai/product-completion/**"
-
+    branches: ["ai/product-completion/**"]
 permissions:
   contents: read
-
 jobs:
-  regression-red:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: .
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - name: Regression policy test
-        run: npm run test:regression
+          node-version: 18
+          cache: npm
+      - run: npm ci
+      - run: npm run test:regression
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
